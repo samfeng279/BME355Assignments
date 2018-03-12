@@ -56,7 +56,7 @@ classdef HillTypeMuscle < handle
             afun = @(t) t>0.5;
             
             % WRITE CODE HERE (to define odefun)
-
+            odefun = @(t, x) HillTypeMuscle.getVelocity(afun(t), x, m.getNormalizedLengthSE(L, x));
             
             OPTIONS = odeset('AbsTol', 1e-6, 'RelTol', 1e-5);  % use this as the final argument to ode45 
             [time, x] = ode45(odefun, [0 2], 1, OPTIONS);
@@ -89,8 +89,12 @@ classdef HillTypeMuscle < handle
             
             beta = 0.1; % damping coefficient (see damped model in Millard et al.)
             
-            % WRITE CODE HERE TO CALCULATE VELOCITY (use Matlab's fzero function) 
-
+            seFL = HillTypeMuscle.forceLengthSE(lT);
+            ceFL = HillTypeMuscle.forceLengthCE(lM);
+            peFL = HillTypeMuscle.forceLengthPE(lM);
+            
+            fun = @(vM) a*ceFL*HillTypeMuscle.forceVelocityCE(vM) + peFL + beta*vM - seFL;
+            result = fzero(fun, 0); 
         end
         
         function result = forceLengthCE(lM)
