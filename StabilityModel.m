@@ -94,15 +94,34 @@ function dx_dt = dynamics(t, x, S, TA, control)
     % S: soleus muscle object (a HillTypeModel)
     % TA: tibialis anterior muscle object (a HillTypeModel)
     
-    t
-    
     Iankle = 90;
-    dS = .05;
+    dS = .05; 
     dTA = .03;
-
-    %WRITE CODE HERE TO IMPLEMENT THE MODEL DYNAMICS
     
-
+    aS = 0.05;
+    aTA = 0.4;
+    
+    %WRITE CODE HERE TO IMPLEMENT THE MODEL DYNAMICS
+    % a_dt: change in angle over time
+    % v_dt: change in angular velocity over time
+    % s_dt: change in soleus CE length over time
+    % ta_dt: change in TA CE length over time
+    
+    sLengthSE = ( StabilityModel.soleusLength(x(1)) - x(3) ) / ( 0.4 * StabilityModel.soleusLength(pi/2) );
+    taLengthSE = ( StabilityModel.tibialisLength(x(1)) - x(4) ) / ( 0.4 * StabilityModel.tibialisLength(pi/2) );  
+    
+    % mS: moment created by soleus
+    % mTA: moment created by TA
+    
+    mS = S.f0M * S.forceLengthSE( sLengthSE )* dS;
+    mTA = TA.f0M * TA.forceLengthSE( taLengthSE )* dTA;
+    
+    a_dt = x(2);
+    v_dt = ( mS - mTA + getGravityMoment(x(1)) ) / Iankle;
+    s_dt = S.getVelocity(aS, x(3), sLengthSE);
+    ta_dt = TA.getVelocity(aTA, x(4), taLengthSE);
+  
+    dx_dt = [a_dt v_dt s_dt ta_dt]';
 end
 
 function result = getGravityMoment(angle)

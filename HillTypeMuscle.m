@@ -87,13 +87,14 @@ classdef HillTypeMuscle < handle
             %   \tilde{l}^T in the paper and the lecture slides)
             % result: normalized velocity
             
+            alpha = 0; % pennation angle
             beta = 0.1; % damping coefficient (see damped model in Millard et al.)
             
             seFL = HillTypeMuscle.forceLengthSE(lT);
             ceFL = HillTypeMuscle.forceLengthCE(lM);
             peFL = HillTypeMuscle.forceLengthPE(lM);
             
-            fun = @(vM) a*ceFL*HillTypeMuscle.forceVelocityCE(vM) + peFL + beta*vM - seFL;
+            fun = @(vM) (a*ceFL*HillTypeMuscle.forceVelocityCE(vM) + peFL + beta*vM)*cos(alpha) - seFL;
             result = fzero(fun, 0); 
         end
         
@@ -124,7 +125,7 @@ classdef HillTypeMuscle < handle
             % WRITE CODE HERE
             sT = 1;
             result = zeros(size(lT));
-            for i = 1:size(lT,2)
+            for i = 1:size(lT)
                 if (lT(i) >= sT) 
                     result(i) = 10 * (lT(i) - sT) + 240 * (lT(i) - sT) ^ 2;
                 else
@@ -261,4 +262,5 @@ function result = getCEForceLengthRegression()
     width = .3;
     lambda = .01;
     result = Regression(length, force, centres, width, lambda, 1);
+
 end
