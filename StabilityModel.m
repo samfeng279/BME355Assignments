@@ -98,24 +98,27 @@ function dx_dt = dynamics(t, x, S, TA, control)
     dS = .05; 
     dTA = .03;
     
-    aS = 0.05;
-    aTA = 0.4;
+    aS = 0.05; % constant activation for soleus
+    aTA = 0.4; % constant activation for TA 
     
-    %WRITE CODE HERE TO IMPLEMENT THE MODEL DYNAMICS
+%     Not sure which of the two options is right
+%     sLengthTotal = S.restingLengthCE + S.restingLengthSE;
+%     taLengthTotal = TA.restingLengthCE + TA.restingLengthSE;
+%     sLengthSE = S.getNormalizedLengthSE(sLengthTotal,x(3));
+%     taLengthSE = TA.getNormalizedLengthSE(taLengthTotal,x(4));
+
+    sLengthSE = S.getNormalizedLengthSE(StabilityModel.soleusLength(x(1)),x(3));
+    taLengthSE = TA.getNormalizedLengthSE(StabilityModel.tibialisLength(x(1)),x(4));
+
+    % mS: moment created by soleus
+    % mTA: moment created by TA
+    mS = S.f0M * S.forceLengthSE( sLengthSE )* dS;
+    mTA = TA.f0M * TA.forceLengthSE( taLengthSE )* dTA;
+
     % a_dt: change in angle over time
     % v_dt: change in angular velocity over time
     % s_dt: change in soleus CE length over time
     % ta_dt: change in TA CE length over time
-    
-    sLengthSE = ( StabilityModel.soleusLength(x(1)) - x(3) ) / ( 0.4 * StabilityModel.soleusLength(pi/2) );
-    taLengthSE = ( StabilityModel.tibialisLength(x(1)) - x(4) ) / ( 0.4 * StabilityModel.tibialisLength(pi/2) );  
-    
-    % mS: moment created by soleus
-    % mTA: moment created by TA
-    
-    mS = S.f0M * S.forceLengthSE( sLengthSE )* dS;
-    mTA = TA.f0M * TA.forceLengthSE( taLengthSE )* dTA;
-    
     a_dt = x(2);
     v_dt = ( mS - mTA + getGravityMoment(x(1)) ) / Iankle;
     s_dt = S.getVelocity(aS, x(3), sLengthSE);
