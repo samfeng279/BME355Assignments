@@ -67,6 +67,8 @@ classdef StabilityModel < handle
             odefun = @(t, x) dynamics(t, x, S, TA, control);            
             [time, x] = ode45(odefun, [0 T], [theta0 0 1 1], OPTIONS);
 
+            figure
+            
             fS = getForce(S, StabilityModel.soleusLength(x(:,1)), x(:,3));
             fTA = getForce(TA, StabilityModel.tibialisLength(x(:,1)), x(:,4));
 
@@ -98,14 +100,20 @@ function dx_dt = dynamics(t, x, S, TA, control)
     dS = .05; 
     dTA = .03;
     
-    aS = 0.05; % constant activation for soleus
-    aTA = 0.4; % constant activation for TA 
-    
-%     Not sure which of the two options is right
-%     sLengthTotal = S.restingLengthCE + S.restingLengthSE;
-%     taLengthTotal = TA.restingLengthCE + TA.restingLengthSE;
-%     sLengthSE = S.getNormalizedLengthSE(sLengthTotal,x(3));
-%     taLengthSE = TA.getNormalizedLengthSE(taLengthTotal,x(4));
+    t
+    % activation is controlled by control variable
+    if control == 0 
+        aS = 0.05; 
+        aTA = 0.4; 
+    else
+        if x(2) > 0
+            aS = 0.001; 
+            aTA = 0.9;
+        else
+            aS = 0.08; 
+            aTA = 0.05;
+        end
+    end
 
     sLengthSE = S.getNormalizedLengthSE(StabilityModel.soleusLength(x(1)),x(3));
     taLengthSE = TA.getNormalizedLengthSE(StabilityModel.tibialisLength(x(1)),x(4));
