@@ -61,7 +61,7 @@ classdef Circulation < handle
 
             if x(2) > x(1)
                 A = filling(C, t);
-            elseif % TODO: fill in this expression 
+            elseif x(1) > x(3)
                 A = ejection(C, t);
             else 
                 A = isovolumic(C, t);
@@ -70,11 +70,20 @@ classdef Circulation < handle
             dx = A*x;
         end
         
-        function A = isovolumic(C, t)
+                
+        function result = getVolume(C,t,vp)
+            % t: time (needed because volume is a function of time)  
+            % result: time-varying volume
+            
+            el = elastance(C,t);
+            result = vp/el + 20;
+        end
+        
+        function A = isovolumic(C,t)
             % This method produces the isovolumic A matrix from the paper.
             % 
             % t: time (needed because elastance is a function of time)
-            
+
             el = elastance(C,t);
             del_dt = elastanceFiniteDifference(C, t);
             A = [del_dt/el 0 0 0;
@@ -84,11 +93,29 @@ classdef Circulation < handle
         end
         
         function A = ejection(C, t)
-            % TODO: implement this method 
+            % This method produces the ejection phase A matrix from the paper.
+            % 
+            % t: time (needed because elastance is a function of time)
+
+            el = elastance(C,t);
+            del_dt = elastanceFiniteDifference(C, t);
+            A = [del_dt/el 0 0 -el;
+                0 -1/(C.R1*C.C2) 1/(C.R1*C.C2) 0; 
+                0 1/(C.R1*C.C3) -1/(C.R1*C.C3) 1/C.C3; 
+                1/C.L 0 -1/C.L -(C.R3+C.R4)/C.L];
         end
         
         function A = filling(C, t)
-            % TODO: implement this method 
+            % This method produces the filling phase A matrix from the paper.
+            % 
+            % t: time (needed because elastance is a function of time)
+
+            el = elastance(C,t);
+            del_dt = elastanceFiniteDifference(C, t);
+            A = [(del_dt/el-el/C.R2) el/C.R2 0 0;
+                1/(C.R2*C.C2) -(C.R1+C.R2)/(C.R1*C.R2*C.C2) 1/(C.R1*C.C2) 0; 
+                0 1/(C.R1*C.C3) -1/(C.R1*C.C3) 0; 
+                0 0 0 0];
         end
         
         function result = elastance(C, t)
@@ -163,8 +190,25 @@ classdef Circulation < handle
             
             initialState = [0; C.nonSlackBloodVolume/C.C2; 0; 0]; 
             ofun = @(t,x) C.getDerivative(t,x); % wrapper function because ode45 expects a function rather than a method
+            [time, state] = ode45(ofun, [0 totalTime], initialState);
             
-            % TODO: get time and state with a call to ode45
+%             vp = state(:,1);
+%             vfun = @(time,vp) C.getVolume(time,vp);
+%             [t, volume] = ode45(vfun, [0 totalTime], 20)
+%             
+            figure
+%             subplot(2,1,1)
+            plot(time, state(:,2), 'r')
+            hold on
+            plot(time, state(:,1), 'g')
+            hold on
+            plot(time, state(:,3)+state(:,4)*C.R4, 'b')
+            xlabel('Time (s)')
+            ylabel('Pressure (mmHg)')
+            set(gca, 'FontSize', 18)
+            legend('Aortic Pressure', 'Ventricular Pressure', 'Aortic Pressure', 'location', 'northwest')
+%             subplot(2,1,2)
+%             plot(vp, volume, 'r')
         end
         
     end
